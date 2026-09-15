@@ -1,10 +1,12 @@
 # ============================================================
 # PyLearn Pro — .gitignore
-# Sensitive files jо public nahi hone chahiye
 # ============================================================
 
-# Supabase keys config (KABHI PUSH MAT KARO!)
-config.js
+# NOTE: config.js Supabase ANON key is PUBLIC by design.
+# It is safe to commit — Supabase Row Level Security protects
+# all data. Never commit SECRET keys (service_role).
+
+# config.js  <-- DO NOT block this, Vercel needs it to deploy!
 
 # Node modules (agar koi install karo baad mein)
 node_modules/

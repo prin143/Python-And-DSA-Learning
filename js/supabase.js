@@ -3,7 +3,18 @@
 // ============================================================
 
 const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Auto-detect site URL (works on localhost AND Vercel/any host)
+const SITE_URL = window.location.origin;
+
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  }
+});
+
 
 // ============================================================
 // PROFILE OPERATIONS
