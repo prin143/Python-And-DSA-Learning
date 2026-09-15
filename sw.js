@@ -1,8 +1,8 @@
 // ============================================================
-// PyLearn Pro — Service Worker v2 (PWA offline + update flow)
+// PyLearn Pro — Service Worker v3 (PWABuilder-compatible)
 // ============================================================
 
-const CACHE_VERSION = 'pylearn-pro-v2';
+const CACHE_VERSION = 'pylearn-pro-v3';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 
 const CACHE_URLS = [
@@ -12,8 +12,10 @@ const CACHE_URLS = [
   '/learn.html',
   '/test.html',
   '/editor.html',
+  '/offline.html',
   '/config.js',
   '/manifest.json',
+  '/icon-512.png',
   '/icon-512.jpg',
   '/styles/main.css',
   '/js/app.js',
@@ -82,7 +84,7 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('fonts.gstatic')
   ) return;
 
-  // HTML navigation: network-first, fall back to cache
+  // HTML navigation: network-first, fall back to cache, then offline page
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -92,12 +94,15 @@ self.addEventListener('fetch', (event) => {
           caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/index.html')))
+        .catch(() =>
+          caches.match(request)
+            .then((cached) => cached || caches.match('/offline.html'))
+        )
     );
     return;
   }
 
-  // Static assets: cache-first
+  // Static assets: cache-first, then network, then offline fallback
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
@@ -111,8 +116,9 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Offline fallback for images
-          if (request.destination === 'image') return caches.match('/icon-512.jpg');
+          // Offline fallback
+          if (request.destination === 'image') return caches.match('/icon-512.png');
+          if (request.destination === 'document') return caches.match('/offline.html');
         });
     })
   );
@@ -124,4 +130,3 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
-

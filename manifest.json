@@ -3,12 +3,12 @@
   "name": "PyLearn Pro",
   "short_name": "PyLearn",
   "description": "Master Python, DSA & Backend with LeetCode-style tests and streak tracking",
-  "start_url": "/index.html",
+  "start_url": "/dashboard.html",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#f8f9fc",
+  "background_color": "#0f0a1e",
   "theme_color": "#7c3aed",
   "lang": "en",
   "dir": "ltr",
@@ -16,46 +16,54 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "PyLearn Pro Dashboard"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Dashboard",
       "short_name": "Home",
       "url": "/dashboard.html",
       "description": "Go to your learning dashboard",
-      "icons": [{ "src": "/icon-512.jpg", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Code Editor",
       "short_name": "Editor",
       "url": "/editor.html",
       "description": "Open Python code editor",
-      "icons": [{ "src": "/icon-512.jpg", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Take a Test",
       "short_name": "Test",
       "url": "/test.html",
       "description": "Test your Python knowledge",
-      "icons": [{ "src": "/icon-512.jpg", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "edge_side_panel": {
