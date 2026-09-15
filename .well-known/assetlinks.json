@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pylearn.pro",
+      "sha256_cert_fingerprints": ["C8:63:88:95:A7:46:A7:E0:A0:77:41:E2:70:08:72:4C:11:C0:59:D3:E0:38:09:7F:1F:A5:9F:C2:10:90:B7:25"]
+    }
+  }
+]
