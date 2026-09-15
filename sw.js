@@ -2,7 +2,7 @@
 // PyLearn Pro — Service Worker v3 (PWABuilder-compatible)
 // ============================================================
 
-const CACHE_VERSION = 'pylearn-pro-v3';
+const CACHE_VERSION = 'pylearn-pro-v4';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 
 const CACHE_URLS = [
