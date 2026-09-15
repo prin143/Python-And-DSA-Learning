@@ -479,5 +479,107 @@ window.renderMobileNav = function(activePage = 'dashboard') {
       })
       .catch(err => console.warn('[SW] Failed:', err));
   });
+// ============================================================
+// PWA INSTALL PROMPT (Android + iOS)
+// ============================================================
+(function initInstallPrompt() {
+  let deferredPrompt = null;
+  const DISMISSED_KEY = 'pwa_install_dismissed';
+
+  // Don't show if already dismissed in last 7 days
+  function wasDismissed() {
+    const t = localStorage.getItem(DISMISSED_KEY);
+    return t && (Date.now() - parseInt(t)) < 7 * 24 * 60 * 60 * 1000;
+  }
+
+  // Detect iOS Safari (no beforeinstallprompt support)
+  function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  }
+
+  // Detect if already installed (running in standalone mode)
+  function isInstalled() {
+    return window.navigator.standalone === true ||
+           window.matchMedia('(display-mode: standalone)').matches;
+  }
+
+  function createBanner(html, onInstall, onDismiss) {
+    const existing = document.getElementById('pwa-install-banner');
+    if (existing) existing.remove();
+
+    const banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+    banner.innerHTML = html;
+    document.body.appendChild(banner);
+
+    // Animate in
+    requestAnimationFrame(() => banner.classList.add('show'));
+
+    banner.querySelector('#pwa-install-btn')?.addEventListener('click', () => {
+      onInstall?.();
+      banner.remove();
+    });
+    banner.querySelector('#pwa-dismiss-btn')?.addEventListener('click', () => {
+      localStorage.setItem(DISMISSED_KEY, Date.now());
+      banner.classList.remove('show');
+      setTimeout(() => banner.remove(), 400);
+      onDismiss?.();
+    });
+  }
+
+  // ── Android / Chrome: use native prompt ─────────────────
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    if (isInstalled() || wasDismissed()) return;
+
+    createBanner(`
+      <div class="pwa-banner-content">
+        <span class="pwa-banner-icon">🐍</span>
+        <div class="pwa-banner-text">
+          <strong>Install PyLearn Pro</strong>
+          <span>Add to home screen for the best experience</span>
+        </div>
+        <button id="pwa-install-btn" class="pwa-btn-install">Install</button>
+        <button id="pwa-dismiss-btn" class="pwa-btn-dismiss">✕</button>
+      </div>
+    `, async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[PWA] Install outcome:', outcome);
+      deferredPrompt = null;
+    });
+  });
+
+  // ── iOS Safari: show manual instructions ────────────────
+  window.addEventListener('load', () => {
+    if (!isIOS() || isInstalled() || wasDismissed()) return;
+
+    // Small delay so page loads first
+    setTimeout(() => {
+      createBanner(`
+        <div class="pwa-banner-content">
+          <span class="pwa-banner-icon">🐍</span>
+          <div class="pwa-banner-text">
+            <strong>Install PyLearn Pro</strong>
+            <span>Tap <strong>Share</strong> 
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin:0 2px"><path d="M12 2l-4 4h3v8h2V6h3l-4-4zm-7 14v4h14v-4h-2v2H7v-2H5z"/></svg>
+              then <strong>"Add to Home Screen"</strong></span>
+          </div>
+          <button id="pwa-install-btn" style="display:none"></button>
+          <button id="pwa-dismiss-btn" class="pwa-btn-dismiss">✕</button>
+        </div>
+      `);
+    }, 2500);
+  });
+
+  // Hide banner once app is installed
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('pwa-install-banner')?.remove();
+    console.log('[PWA] App installed!');
+  });
 })();
+
 
