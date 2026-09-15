@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyLearn Pro — Master Python, DSA & Beyond</title>
+  <meta name="description" content="Learn Python, DSA and Backend with LeetCode-style tests, streak tracking, and a premium dark UI. Unlock topics by solving coding challenges." />
+  <link rel="stylesheet" href="styles/main.css" />
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+
+    .auth-container {
+      width: 100%; max-width: 440px;
+      position: relative; z-index: 1;
+    }
+
+    .auth-logo {
+      display: flex; align-items: center; gap: 12px;
+      justify-content: center; margin-bottom: 36px;
+    }
+    .auth-logo-icon {
+      width: 52px; height: 52px;
+      background: var(--gradient-primary);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      box-shadow: var(--glow-purple);
+    }
+    .auth-logo-name { font-size: 26px; font-weight: 900; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .auth-logo-tag  { font-size: 12px; color: var(--text-muted); }
+
+    .auth-card {
+      padding: 36px;
+      background: rgba(10,10,40,0.85);
+      backdrop-filter: blur(30px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .auth-tabs { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .auth-tab {
+      flex: 1; padding: 12px; background: none; border: none;
+      font-family: var(--font-sans); font-size: 15px; font-weight: 600;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; transition: var(--transition);
+    }
+    .auth-tab.active { color: var(--purple-400); border-bottom-color: var(--purple-500); }
+    .auth-tab:hover:not(.active) { color: var(--text-secondary); }
+
+    .auth-form { display: none; }
+    .auth-form.active { display: block; animation: slideUp 0.3s ease; }
+
+    .auth-title    { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .auth-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+
+    .password-wrapper { position: relative; }
+    .password-toggle {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 18px; padding: 0; line-height: 1; transition: var(--transition);
+    }
+    .password-toggle:hover { color: var(--purple-400); }
+
+    .strength-bar { display: flex; gap: 4px; margin-top: 8px; }
+    .strength-seg { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: var(--transition); }
+    .strength-seg.active-1 { background: var(--red-400); }
+    .strength-seg.active-2 { background: var(--orange-400); }
+    .strength-seg.active-3 { background: var(--yellow-400); }
+    .strength-seg.active-4 { background: var(--green-400); }
+    .strength-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    .auth-features {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border);
+    }
+    .auth-feature { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
+    .auth-feature-icon { font-size: 16px; }
+
+    #auth-error {
+      padding: 10px 14px;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 13px; color: var(--red-400);
+      margin-bottom: 16px; display: none;
+    }
+    #auth-error.show { display: block; animation: slideUp 0.2s ease; }
+
+    .stats-teaser {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+      margin-top: 32px;
+    }
+    .stat-teaser {
+      text-align: center; padding: 16px 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+    }
+    .stat-teaser-value { font-size: 22px; font-weight: 900; }
+    .stat-teaser-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Auth container -->
+  <div class="auth-container">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🐍</div>
+      <div>
+        <div class="auth-logo-name">PyLearn Pro</div>
+        <div class="auth-logo-tag">Master Python · DSA · Backend</div>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <div class="auth-card">
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <!-- Error box -->
+      <div id="auth-error"></div>
+
+      <!-- LOGIN FORM -->
+      <div class="auth-form active" id="form-login">
+        <div class="auth-title">Welcome back 👋</div>
+        <div class="auth-subtitle">Login to continue your learning journey</div>
+
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="login-email" class="form-input" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;justify-content:space-between;">
+              Password
+              <span style="font-weight:500;color:var(--purple-400);cursor:pointer;" onclick="showForgot()">Forgot?</span>
+            </label>
+            <div class="password-wrapper">
+              <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+              <button type="button" class="password-toggle" onclick="togglePassword('login-password',this)">👁</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn" style="justify-content:center;">
+            <span id="login-btn-text">Login</span>
+            <span id="login-spinner" class="spinner spinner-sm hidden"></span>
+          </button>
+        </form>
+
+        <div class="auth-features">
+          <div class="auth-feature"><span class="auth-feature-icon">🔐</span>Your progress is saved securely</div>
+          <div class="auth-feature"><span class="auth-feature-icon">🔥</span>Daily streaks track your consistency</div>
+          <div class="auth-feature"><span class="auth-feature-icon">📈</span>Resume exactly where you left off</div>
+        </div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="auth-form" id="form-register">
+        <div class="auth-title">Start your journey 🚀</div>
+        <div class="auth-subtitle">Create your free account to begin</div>
+
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" id="reg-username" class="form-input" placeholder="e.g. python_ninja" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" />
+            <div class="form-error hidden" id="username-error">Only letters, numbers, and underscores</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="reg-email" class="form-input" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="reg-password" class="form-input" placeholder="Min 8 characters" required minlength="8" oninput="checkStrength(this.value)" autocomplete="new-password" />
+              <button type="button" class="password-toggle" onclick="togglePassword('reg-password',this)">👁</button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-seg" id="s1"></div>
+              <div class="strength-seg" id="s2"></div>
+              <div class="strength-seg" id="s3"></div>
+              <div class="strength-seg" id="s4"></div>
+            </div>
+            <div class="strength-label" id="strength-label"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" id="reg-confirm" class="form-input" placeholder="Re-enter password" required autocomplete="new-password" />
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg" id="reg-btn" style="justify-content:center;">
+            <span id="reg-btn-text">Create Account</span>
+            <span id="reg-spinner" class="spinner spinner-sm hidden"></span>
+          </button>
+        </form>
+
+        <div class="stats-teaser">
+          <div class="stat-teaser">
+            <div class="stat-teaser-value gradient-text">20+</div>
+            <div class="stat-teaser-label">Python Topics</div>
+          </div>
+          <div class="stat-teaser">
+            <div class="stat-teaser-value gradient-text-cyan">600+</div>
+            <div class="stat-teaser-label">Questions</div>
+          </div>
+          <div class="stat-teaser">
+            <div class="stat-teaser-value gradient-text-gold">17+</div>
+            <div class="stat-teaser-label">DSA Topics</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+      document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+      document.getElementById('form-login').classList.toggle('active', tab === 'login');
+      document.getElementById('form-register').classList.toggle('active', tab === 'register');
+      clearError();
+    }
+
+    // Password visibility toggle
+    function togglePassword(id, btn) {
+      const inp = document.getElementById(id);
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+      else { inp.type = 'password'; btn.textContent = '👁'; }
+    }
+
+    // Password strength checker
+    function checkStrength(val) {
+      let score = 0;
+      if (val.length >= 8)  score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const labels = ['','Weak','Fair','Good','Strong'];
+      const colors = ['','active-1','active-2','active-3','active-4'];
+      for (let i = 1; i <= 4; i++) {
+        const seg = document.getElementById('s'+i);
+        seg.className = 'strength-seg' + (i <= score ? ' ' + colors[score] : '');
+      }
+      document.getElementById('strength-label').textContent = labels[score] || '';
+    }
+
+    // Show error
+    function showError(msg) {
+      const el = document.getElementById('auth-error');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+    function clearError() {
+      document.getElementById('auth-error').classList.remove('show');
+    }
+
+    // Handle login
+    async function handleLogin(e) {
+      e.preventDefault();
+      clearError();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      setLoading('login', true);
+      const { error } = await authLogin(email, password);
+      setLoading('login', false);
+      if (error) { showError(error.message || 'Login failed. Please try again.'); return; }
+      window.location.href = 'dashboard.html';
+    }
+
+    // Handle register
+    async function handleRegister(e) {
+      e.preventDefault();
+      clearError();
+      const username = document.getElementById('reg-username').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirm  = document.getElementById('reg-confirm').value;
+
+      // Validation
+      if (!username) { showError('Username is required.'); return; }
+      if (username.length < 3) { showError('Username must be at least 3 characters.'); return; }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) { showError('Username: only letters, numbers, underscores.'); return; }
+      if (password !== confirm) { showError('Passwords do not match.'); return; }
+      if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+
+      setLoading('reg', true);
+      const { data, error } = await authRegister(email, password, username);
+      setLoading('reg', false);
+
+      if (error) {
+        // Handle specific Supabase error messages in Hinglish
+        let msg = error.message || 'Registration failed.';
+        if (msg.includes('already registered') || msg.includes('already been registered')) {
+          msg = 'Yeh email pehle se registered hai. Login try karo.';
+        } else if (msg.includes('rate limit') || msg.includes('email rate limit')) {
+          // Email limit hit — just auto-login instead
+          const { error: loginErr } = await authLogin(email, password);
+          if (!loginErr) { window.location.href = 'dashboard.html'; return; }
+          msg = 'Account bana diya! Thodi der baad login karo.';
+        } else if (msg.includes('Invalid email')) {
+          msg = 'Valid email address enter karo.';
+        } else if (msg.includes('Password')) {
+          msg = 'Password kam se kam 6 characters ka hona chahiye.';
+        }
+        showError(msg);
+        return;
+      }
+
+      // Success — if session is available (email confirm disabled), redirect immediately
+      if (data?.session) {
+        showToast('success', '🎉 Account Ready!', `Welcome ${username}! Dashboard pe aa rahe hain...`);
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+      } else {
+        // Email confirm is enabled in Supabase — tell user to check email
+        showToast('info', '📧 Email Bheja!',
+          'Ek confirmation link aaya hai. Verify karo phir login karo. ' +
+          '(Ya Supabase mein "Confirm email" OFF karo — seedha login hoga!)');
+        switchTab('login');
+        document.getElementById('login-email').value = email;
+      }
+    }
+
+    function setLoading(form, on) {
+      const btn = document.getElementById(form+'-btn');
+      const txt = document.getElementById(form+'-btn-text');
+      const spn = document.getElementById(form+'-spinner');
+      btn.disabled = on;
+      txt.textContent = on ? (form==='login'?'Logging in...':'Creating...') : (form==='login'?'Login':'Create Account');
+      spn.classList.toggle('hidden', !on);
+    }
+
+    function showForgot() {
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) { showError('Enter your email first, then click Forgot.'); return; }
+      authForgotPassword(email).then(({error}) => {
+        if (error) showError(error.message);
+        else showToast('info','Reset Sent','Check your email for the password reset link.');
+      });
+    }
+
+    // Toast helper (available before app.js)
+    function showToast(type, title, msg) {
+      const icons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast ' + type;
+      t.innerHTML = `
+        <span class="toast-icon">${icons[type]||'ℹ️'}</span>
+        <div class="toast-body">
+          <div class="toast-title">${title}</div>
+          <div class="toast-msg">${msg}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+      c.appendChild(t);
+      setTimeout(() => { t.classList.add('removing'); setTimeout(()=>t.remove(),350); }, 4500);
+    }
+
+    // Check if already logged in → redirect
+    (async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data?.session) window.location.href = 'dashboard.html';
+    })();
+  </script>
+</body>
+</html>

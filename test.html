@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test — PyLearn Pro</title>
+  <meta name="description" content="Topic test with LeetCode-style questions. Pass 70% to unlock the next topic."/>
+  <link rel="stylesheet" href="styles/main.css"/>
+  <style>
+    .test-layout   { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - var(--topbar-h)); }
+    .test-left     { border-right: 1px solid var(--border); padding: 24px; background: rgba(5,5,26,0.6); }
+    .test-main     { padding: 32px; overflow-y: auto; }
+
+    .q-meta { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .q-text { font-size: 17px; font-weight: 600; line-height: 1.6; margin-bottom: 8px; color: var(--text-primary); }
+    .q-code-block { background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 20px; font-family: var(--font-mono); font-size: 14px; line-height: 1.65; margin: 12px 0; color: #e2e8f0; overflow-x: auto; }
+
+    .test-timer-ring {
+      width: 80px; height: 80px;
+      border: 3px solid rgba(124,58,237,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+    .timer-val  { font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-400); }
+    .timer-lab  { font-size: 9px; color: var(--text-muted); letter-spacing: 1px; }
+    .test-timer-ring.warning { border-color: rgba(251,146,60,0.4); }
+    .test-timer-ring.warning .timer-val { color: var(--orange-400); }
+    .test-timer-ring.danger  { border-color: rgba(239,68,68,0.4); animation: pulse 0.5s infinite; }
+    .test-timer-ring.danger  .timer-val { color: var(--red-400); }
+
+    .test-progress-info { text-align: center; margin-bottom: 20px; }
+    .test-progress-q    { font-size: 24px; font-weight: 900; }
+    .test-progress-sub  { font-size: 12px; color: var(--text-muted); }
+
+    .test-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+
+    /* Results page */
+    .results-page { text-align: center; max-width: 600px; margin: 0 auto; }
+    .results-trophy { font-size: 80px; margin-bottom: 20px; }
+    .results-breakdown { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 28px 0; }
+    .breakdown-item { padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); }
+    .breakdown-val  { font-size: 28px; font-weight: 900; }
+    .breakdown-lab  { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .answer-review { margin-top: 24px; text-align: left; }
+    .review-item { padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 8px; font-size: 14px; border: 1px solid; }
+    .review-correct { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.2); }
+    .review-wrong   { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.2);  }
+    .review-q-num   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .review-correct .review-q-num { color: var(--green-400); }
+    .review-wrong   .review-q-num { color: var(--red-400); }
+
+    /* Unlocked toast animation */
+    .unlock-banner {
+      background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(6,182,212,0.08));
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      text-align: center;
+      animation: slideUp 0.5s ease;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs"><div class="orb orb-1"></div></div>
+  <div id="loading-overlay"><div class="spinner"></div></div>
+  <div id="toast-container"></div>
+  <div id="sidebar" class="sidebar"></div>
+
+  <div class="main-content">
+    <div id="topbar" class="topbar"></div>
+
+    <!-- TEST VIEW -->
+    <div id="test-view">
+      <div class="test-layout">
+
+        <!-- Left Panel -->
+        <div class="test-left">
+          <!-- Timer -->
+          <div class="test-timer-ring" id="timer-ring">
+            <div class="timer-val" id="timer-val">60</div>
+            <div class="timer-lab">SECS</div>
+          </div>
+
+          <!-- Progress -->
+          <div class="test-progress-info">
+            <div class="test-progress-q">
+              <span id="q-current">1</span><span style="color:var(--text-muted);font-size:16px;font-weight:400">/<span id="q-total">0</span></span>
+            </div>
+            <div class="test-progress-sub">Questions</div>
+          </div>
+          <div class="progress-bar mb-20">
+            <div class="progress-fill" id="main-progress" style="width:0%"></div>
+          </div>
+
+          <!-- Score tracker -->
+          <div class="glass p-16 mb-16" style="text-align:center">
+            <div style="display:flex;justify-content:space-around">
+              <div>
+                <div style="font-size:20px;font-weight:800;color:var(--green-400)" id="score-correct">0</div>
+                <div class="text-xs text-muted">Correct</div>
+              </div>
+              <div>
+                <div style="font-size:20px;font-weight:800;color:var(--red-400)" id="score-wrong">0</div>
+                <div class="text-xs text-muted">Wrong</div>
+              </div>
+              <div>
+                <div style="font-size:20px;font-weight:800;color:var(--cyan-400)" id="score-skip">0</div>
+                <div class="text-xs text-muted">Pending</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q Dots -->
+          <div class="q-dots" id="q-dots"></div>
+
+          <!-- Actions -->
+          <div class="test-actions">
+            <button class="btn btn-primary" id="submit-btn" onclick="submitAnswer()">Submit Answer</button>
+            <button class="btn btn-secondary" id="next-btn" onclick="nextQuestion()" style="display:none">Next →</button>
+            <button class="btn btn-secondary btn-sm" onclick="skipQuestion()">Skip</button>
+          </div>
+        </div>
+
+        <!-- Right Main -->
+        <div class="test-main" id="question-container">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS VIEW (hidden initially) -->
+    <div id="results-view" class="hidden" style="padding:40px">
+      <div class="results-page">
+        <div class="results-trophy" id="results-trophy">🏆</div>
+
+        <div class="result-ring" id="result-ring">
+          <div class="result-pct" id="result-pct">0%</div>
+          <div class="result-label" id="result-label">Score</div>
+        </div>
+
+        <div id="result-title" style="font-size:24px;font-weight:900;margin:24px 0 8px">Great job!</div>
+        <div id="result-msg" style="font-size:15px;color:var(--text-secondary);max-width:420px;margin:0 auto;line-height:1.7"></div>
+
+        <div class="results-breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-val" style="color:var(--green-400)" id="br-correct">0</div>
+            <div class="breakdown-lab">Correct</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-val" style="color:var(--red-400)" id="br-wrong">0</div>
+            <div class="breakdown-lab">Wrong</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-val" style="color:var(--cyan-400)" id="br-time">0s</div>
+            <div class="breakdown-lab">Time Spent</div>
+          </div>
+        </div>
+
+        <div id="unlock-banner-slot"></div>
+
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="goToLearn(currentTopicId)">← Back to Topic</button>
+          <button class="btn btn-primary" id="next-topic-btn" onclick="goNextTopic()">Next Topic →</button>
+          <button class="btn btn-outline" onclick="retakeTest()">🔄 Retake</button>
+        </div>
+
+        <!-- Answer Review -->
+        <div class="answer-review" id="answer-review"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // ========== STATE ==========
+    let questions       = [];
+    let currentIndex    = 0;
+    let selectedOption  = null;
+    let answered        = false;
+    let correctCount    = 0;
+    let wrongCount      = 0;
+    let userAnswers     = [];    // [{questionId, correct, selected}]
+    let timerInterval   = null;
+    let timeLeft        = 90;   // seconds per question
+    let testStartTime   = null;
+    let totalTime       = 0;
+    let currentTopicId  = null;
+    let currentTopic    = null;
+
+    // ========== INIT ==========
+    async function init() {
+      const ok = await requireAuth();
+      if (!ok) return;
+
+      currentTopicId = getUrlParam('topic') || 'py_basics';
+      currentTopic   = getTopicById(currentTopicId);
+
+      if (!currentTopic || !isTopicUnlocked(currentTopicId, currentTopic.type)) {
+        showToast('error','Not Allowed','Topic not accessible.');
+        goToDashboard();
+        return;
+      }
+
+      renderSidebar();
+      renderTopbar(`Test: ${currentTopic.title}`);
+
+      // Load questions (shuffled)
+      questions = shuffleQuestions(currentTopicId);
+      if (!questions.length) {
+        showToast('error','No Questions','No questions available for this topic yet.');
+        goToLearn(currentTopicId);
+        return;
+      }
+
+      userAnswers = new Array(questions.length).fill(null).map((_,i) => ({
+        index: i, questionId: questions[i].id, correct: null, selected: null, skipped: true
+      }));
+
+      renderDots();
+      showQuestion(0);
+      testStartTime = Date.now();
+      hideLoading();
+    }
+
+    // ========== QUESTION RENDERING ==========
+    function showQuestion(idx) {
+      currentIndex  = idx;
+      selectedOption = null;
+      answered       = false;
+
+      const q = questions[idx];
+      updateProgress();
+      startTimer();
+
+      const container = document.getElementById('question-container');
+
+      let optionsHtml = '';
+      if (q.type === 'mcq' || q.type === 'code_output') {
+        const letters = ['A','B','C','D'];
+        optionsHtml = `<div class="mcq-options" id="mcq-opts">
+          ${q.options.map((o,i) => `
+            <div class="mcq-option" id="opt-${i}" onclick="selectOption(${i})">
+              <div class="mcq-letter">${letters[i]}</div>
+              <div>${o}</div>
+            </div>`).join('')}
+        </div>`;
+      } else if (q.type === 'fill_blank') {
+        optionsHtml = `
+          <div style="margin-top:24px">
+            <label class="form-label">Your Answer:</label>
+            <input type="text" id="fill-answer" class="form-input" placeholder="Type your answer..." autocomplete="off"
+              onkeydown="if(event.key==='Enter')submitAnswer()"/>
+          </div>`;
+      } else if (q.type === 'debug') {
+        optionsHtml = `<div class="mcq-options" id="mcq-opts">
+          ${q.options.map((o,i) => `
+            <div class="mcq-option" id="opt-${i}" onclick="selectOption(${i})">
+              <div class="mcq-letter">${['A','B','C','D'][i]}</div>
+              <div>${o}</div>
+            </div>`).join('')}
+        </div>`;
+      }
+
+      const diffColors = {easy:'var(--green-400)',medium:'var(--orange-400)',hard:'var(--red-400)'};
+      container.innerHTML = `
+        <div class="fade-in">
+          <div class="q-meta">
+            <span style="color:${diffColors[q.difficulty]||'var(--purple-400)'}">● ${(q.difficulty||'medium').toUpperCase()}</span>
+            <span>·</span>
+            <span>${q.type.replace('_',' ').toUpperCase()}</span>
+            <span>·</span>
+            <span>${q.points||1} pt${q.points>1?'s':''}</span>
+          </div>
+          <div class="q-text">${q.question}</div>
+          ${q.code ? `<div class="q-code-block">${escapeHtml(q.code)}</div>` : ''}
+          ${optionsHtml}
+          <div id="explanation-box" class="hidden"></div>
+        </div>`;
+
+      document.getElementById('submit-btn').style.display = 'block';
+      document.getElementById('next-btn').style.display = 'none';
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function selectOption(i) {
+      if (answered) return;
+      selectedOption = i;
+      document.querySelectorAll('.mcq-option').forEach((el,idx) => {
+        el.classList.toggle('selected', idx === i);
+      });
+    }
+
+    // ========== SUBMIT ==========
+    function submitAnswer() {
+      if (answered) return;
+
+      const q = questions[currentIndex];
+      answered = true;
+      clearInterval(timerInterval);
+
+      let isCorrect = false;
+      let selected  = selectedOption;
+
+      if (q.type === 'fill_blank') {
+        const val = (document.getElementById('fill-answer')?.value || '').trim().toLowerCase();
+        selected = val;
+        isCorrect = val === (q.answer||'').toLowerCase() ||
+                    val.includes((q.answer||'').toLowerCase());
+      } else {
+        if (selectedOption === null) { skipQuestion(); return; }
+        isCorrect = (selectedOption === q.correct);
+      }
+
+      // Update answer record
+      userAnswers[currentIndex] = {
+        index: currentIndex, questionId: q.id,
+        correct: isCorrect, selected, skipped: false
+      };
+
+      if (isCorrect) {
+        correctCount++;
+        document.getElementById('score-correct').textContent = correctCount;
+        // Mark option green
+        if (typeof selectedOption === 'number') {
+          document.getElementById(`opt-${selectedOption}`)?.classList.add('correct');
+        }
+      } else {
+        wrongCount++;
+        document.getElementById('score-wrong').textContent = wrongCount;
+        // Mark selected wrong, correct green
+        if (typeof selectedOption === 'number') {
+          document.getElementById(`opt-${selectedOption}`)?.classList.add('wrong');
+        }
+        if (typeof q.correct === 'number') {
+          document.getElementById(`opt-${q.correct}`)?.classList.add('correct');
+        }
+      }
+
+      // Make all options non-clickable
+      document.querySelectorAll('.mcq-option').forEach(el => el.classList.add('disabled'));
+
+      // Show explanation
+      if (q.explanation) {
+        const exEl = document.getElementById('explanation-box');
+        exEl.className = 'explanation-box';
+        exEl.innerHTML = `<div class="label">💡 Explanation</div>${q.explanation}`;
+      }
+
+      // Update dots
+      updateDot(currentIndex, isCorrect ? 'correct' : 'wrong');
+
+      // Log to Supabase (async, don't await)
+      if (AppState.user) {
+        dbLogAttempt(AppState.user.id, q.id, currentTopicId, currentTopic.type,
+          isCorrect, selected, q.correct, 90 - timeLeft);
+      }
+
+      document.getElementById('submit-btn').style.display = 'none';
+      document.getElementById('next-btn').style.display = 'block';
+
+      // Auto advance if last question
+      if (currentIndex === questions.length - 1) {
+        document.getElementById('next-btn').textContent = '📊 View Results';
+        document.getElementById('next-btn').onclick = showResults;
+      }
+    }
+
+    function skipQuestion() {
+      clearInterval(timerInterval);
+      userAnswers[currentIndex].skipped = true;
+      updateDot(currentIndex, 'skipped');
+      document.getElementById('score-skip').textContent =
+        userAnswers.filter(a => a.skipped).length;
+
+      if (currentIndex < questions.length - 1) {
+        showQuestion(currentIndex + 1);
+      } else {
+        showResults();
+      }
+    }
+
+    function nextQuestion() {
+      if (currentIndex < questions.length - 1) {
+        showQuestion(currentIndex + 1);
+      } else {
+        showResults();
+      }
+    }
+
+    // ========== TIMER ==========
+    function startTimer() {
+      clearInterval(timerInterval);
+      timeLeft = 90;
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          showToast('warning','Time Up!','Moving to next question...');
+          skipQuestion();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const el = document.getElementById('timer-val');
+      const ring = document.getElementById('timer-ring');
+      if (el) el.textContent = timeLeft;
+      ring?.classList.toggle('warning', timeLeft <= 30 && timeLeft > 10);
+      ring?.classList.toggle('danger',  timeLeft <= 10);
+    }
+
+    // ========== UI HELPERS ==========
+    function updateProgress() {
+      const n = currentIndex + 1;
+      const total = questions.length;
+      document.getElementById('q-current').textContent = n;
+      document.getElementById('q-total').textContent   = total;
+      document.getElementById('main-progress').style.width = `${(n/total)*100}%`;
+    }
+
+    function renderDots() {
+      document.getElementById('q-dots').innerHTML =
+        questions.map((_,i) => `<div class="q-dot" id="dot-${i}" onclick="jumpTo(${i})">${i+1}</div>`).join('');
+      updateDot(0, 'current');
+    }
+
+    function updateDot(idx, state) {
+      const dot = document.getElementById(`dot-${idx}`);
+      if (!dot) return;
+      dot.className = 'q-dot';
+      if (idx === currentIndex && state !== 'correct' && state !== 'wrong') {
+        dot.classList.add('current');
+      } else {
+        dot.classList.add(state);
+      }
+    }
+
+    function jumpTo(idx) {
+      if (!answered && currentIndex !== idx) return;
+      showQuestion(idx);
+    }
+
+    // ========== RESULTS ==========
+    async function showResults() {
+      clearInterval(timerInterval);
+      const elapsed = Math.round((Date.now() - testStartTime) / 1000);
+      totalTime = elapsed;
+      window._testTimeTaken = elapsed;
+
+      const total   = questions.length;
+      const score   = Math.round((correctCount / total) * 100);
+      const passed  = score >= APP_CONFIG.PASS_PERCENTAGE;
+
+      // Save to DB
+      const questionsData = userAnswers.map((a,i) => ({
+        id: questions[i]?.id, correct: a.correct, selected: a.selected
+      }));
+      const result = await handleTestCompletion(
+        currentTopicId, currentTopic.type,
+        correctCount, total, questionsData
+      );
+
+      // Show results view
+      document.getElementById('test-view').classList.add('hidden');
+      document.getElementById('results-view').classList.remove('hidden');
+
+      // Trophy
+      const trophy = passed ? (score>=90?'🏆':score>=80?'🥇':'🥈') : '📚';
+      document.getElementById('results-trophy').textContent = trophy;
+
+      // Ring
+      const ring = document.getElementById('result-ring');
+      ring.className = `result-ring ${passed?'pass':'fail'}`;
+      document.getElementById('result-pct').textContent = `${score}%`;
+      document.getElementById('result-label').textContent = 'Score';
+
+      // Message
+      document.getElementById('result-title').textContent =
+        passed ? (score>=90?'Outstanding! 🎉':'Great Job! 👏') : 'Keep Practicing! 💪';
+      document.getElementById('result-msg').textContent = passed
+        ? `You passed with ${score}%! The next topic has been unlocked.`
+        : `You got ${score}%. Need ${APP_CONFIG.PASS_PERCENTAGE}% to pass. Review the content and try again!`;
+
+      // Breakdown
+      document.getElementById('br-correct').textContent = correctCount;
+      document.getElementById('br-wrong').textContent   = total - correctCount;
+      document.getElementById('br-time').textContent    = `${elapsed}s`;
+
+      // Unlock banner
+      if (passed) {
+        showConfetti();
+        const nextId = getNextTopicId(currentTopicId, currentTopic.type);
+        const nextTopic = nextId ? getTopicById(nextId) : null;
+        document.getElementById('unlock-banner-slot').innerHTML = nextTopic
+          ? `<div class="unlock-banner">
+              <div style="font-size:32px">🔓</div>
+              <div style="font-size:17px;font-weight:800;margin:8px 0">Next Topic Unlocked!</div>
+              <div style="font-size:14px;color:var(--text-secondary)">${nextTopic.icon} <strong>${nextTopic.title}</strong> is now available</div>
+            </div>`
+          : `<div class="unlock-banner">
+              <div style="font-size:32px">🎉</div>
+              <div style="font-size:17px;font-weight:800;margin:8px 0">Section Complete!</div>
+              <div style="font-size:14px;color:var(--text-secondary)">You've completed all available topics!</div>
+            </div>`;
+
+        const nextBtn = document.getElementById('next-topic-btn');
+        if (nextTopic && AppState.topicProgress[nextId]?.is_unlocked) {
+          nextBtn.textContent = `${nextTopic.icon} ${nextTopic.title} →`;
+          nextBtn.onclick = () => goToLearn(nextId);
+        } else {
+          nextBtn.style.display = 'none';
+        }
+      } else {
+        document.getElementById('next-topic-btn').style.display = 'none';
+      }
+
+      // Answer review (first 10)
+      const review = document.getElementById('answer-review');
+      review.innerHTML = `<div style="font-size:14px;font-weight:700;margin-bottom:12px">Answer Review</div>` +
+        userAnswers.slice(0, 15).map((a, i) => {
+          if (a.skipped) return '';
+          const q = questions[i];
+          const cls = a.correct ? 'review-correct' : 'review-wrong';
+          return `<div class="review-item ${cls}">
+            <div class="review-q-num">${a.correct?'✓ Correct':'✗ Wrong'} · Q${i+1}</div>
+            <div style="font-size:13px;color:var(--text-secondary)">${q.question.substring(0,80)}${q.question.length>80?'...':''}</div>
+            ${!a.correct && q.explanation ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">💡 ${q.explanation}</div>` : ''}
+          </div>`;
+        }).join('');
+    }
+
+    function retakeTest() {
+      window.location.reload();
+    }
+
+    function goNextTopic() {
+      const nextId = getNextTopicId(currentTopicId, currentTopic.type);
+      if (nextId) goToLearn(nextId);
+      else goToDashboard();
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — PyLearn Pro</title>
+  <meta name="description" content="Your learning dashboard. Track progress, streaks, and topics across Python and DSA."/>
+  <link rel="stylesheet" href="styles/main.css"/>
+  <style>
+    /* ===== DASHBOARD SPECIFIC ===== */
+    .dash-hero {
+      background: linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(79,70,229,0.08) 100%);
+      border: 1px solid rgba(124,58,237,0.15);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .dash-hero::before {
+      content: '';
+      position: absolute; right: -60px; top: -60px;
+      width: 200px; height: 200px;
+      background: var(--gradient-primary);
+      border-radius: 50%;
+      opacity: 0.07;
+    }
+    .dash-hero-emoji { font-size: 48px; margin-bottom: 12px; }
+    .dash-hero-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .dash-hero-sub   { font-size: 14px; color: var(--text-secondary); }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .section-title  { font-size: 18px; font-weight: 800; }
+    .section-sub    { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    .dsa-lock-card {
+      background: linear-gradient(135deg, rgba(234,179,8,0.05) 0%, rgba(251,146,60,0.05) 100%);
+      border: 1px solid rgba(234,179,8,0.15);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      text-align: center;
+    }
+    .dsa-lock-icon { font-size: 56px; margin-bottom: 16px; }
+    .dsa-lock-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .dsa-lock-desc  { font-size: 14px; color: var(--text-secondary); max-width: 400px; margin: 0 auto 24px; line-height: 1.7; }
+    .req-bars { display: flex; flex-direction: column; gap: 10px; max-width: 360px; margin: 0 auto; }
+    .req-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: var(--text-secondary); }
+    .req-bar-label strong { color: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <!-- Background -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="font-size:14px;color:var(--text-muted)">Loading your progress...</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container"></div>
+
+  <!-- Layout -->
+  <div id="sidebar" class="sidebar"></div>
+
+  <div class="main-content">
+    <div id="topbar" class="topbar"></div>
+
+    <div class="content-wrapper">
+
+      <!-- Hero welcome -->
+      <div class="dash-hero slide-up">
+        <div class="dash-hero-emoji" id="hero-emoji">👋</div>
+        <div class="dash-hero-title" id="hero-title">Welcome back!</div>
+        <div class="dash-hero-sub" id="hero-sub">Keep the momentum going. Let's learn something today!</div>
+        <button class="btn btn-primary mt-16" onclick="resumeLearning()" id="resume-btn">
+          ▶ Resume Learning
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid mb-32">
+        <div class="glass stat-card slide-up">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value gradient-text" id="stat-streak">0</div>
+          <div class="stat-label">Day Streak</div>
+          <div class="stat-sub" id="stat-streak-sub">Start today!</div>
+        </div>
+        <div class="glass stat-card slide-up">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value gradient-text-cyan" id="stat-solved">0</div>
+          <div class="stat-label">Questions Solved</div>
+          <div class="stat-sub" id="stat-solved-sub">Keep going!</div>
+        </div>
+        <div class="glass stat-card slide-up">
+          <div class="stat-icon">📚</div>
+          <div class="stat-value gradient-text" id="stat-topics">0</div>
+          <div class="stat-label">Topics Complete</div>
+          <div class="stat-sub">of 20 Python topics</div>
+        </div>
+        <div class="glass stat-card slide-up">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value gradient-text-gold" id="stat-xp">0</div>
+          <div class="stat-label">XP Points</div>
+          <div class="stat-sub" id="stat-level">Level 1</div>
+        </div>
+      </div>
+
+      <!-- Streak Calendar -->
+      <div class="glass p-24 mb-32">
+        <div class="section-header">
+          <div>
+            <div class="section-title">🗓️ Activity — Last 30 Days</div>
+            <div class="section-sub">Each square = one day of learning</div>
+          </div>
+        </div>
+        <div class="streak-calendar" id="streak-calendar"></div>
+        <div class="flex gap-16 mt-16 text-sm text-muted">
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:14px;height:14px;border-radius:3px;background:rgba(255,255,255,0.05)"></div> No activity</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:14px;height:14px;border-radius:3px;background:var(--purple-600)"></div> Studied</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:14px;height:14px;border-radius:3px;background:var(--cyan-400)"></div> Today</div>
+        </div>
+      </div>
+
+      <!-- Tabs: Python / DSA -->
+      <div class="tabs" id="section-tabs">
+        <button class="tab active" id="tab-python" onclick="switchSection('python')">🐍 Python (20 Topics)</button>
+        <button class="tab" id="tab-dsa" onclick="switchSection('dsa')">🧮 DSA (17 Topics)</button>
+        <button class="tab" id="tab-backend" onclick="switchSection('backend')">🗄️ Backend (Soon)</button>
+      </div>
+
+      <!-- Python Topics -->
+      <div id="section-python">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Python Curriculum</div>
+            <div class="section-sub">Complete topics in order. Pass 70% test to unlock next.</div>
+          </div>
+          <div id="python-progress-text" class="text-muted text-sm"></div>
+        </div>
+        <div class="topic-grid" id="python-topics-grid">
+          <div class="glass p-24" style="grid-column:1/-1;text-align:center;color:var(--text-muted)">Loading topics...</div>
+        </div>
+      </div>
+
+      <!-- DSA Topics -->
+      <div id="section-dsa" class="hidden">
+        <div id="dsa-content"></div>
+      </div>
+
+      <!-- Backend -->
+      <div id="section-backend" class="hidden">
+        <div class="dsa-lock-card">
+          <div class="dsa-lock-icon">🚧</div>
+          <div class="dsa-lock-title">Backend is coming soon!</div>
+          <div class="dsa-lock-desc">We're building SQL, FastAPI, Authentication, and Deployment topics. Stay tuned!</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let currentSection = 'python';
+
+    async function init() {
+      const ok = await requireAuth();
+      if (!ok) return;
+
+      renderSidebar('dashboard');
+      renderTopbar('Dashboard');
+      updateHero();
+      updateStats();
+      renderTopics('python');
+      renderStreakCalendar('streak-calendar');
+      hideLoading();
+
+      // Check URL section param
+      const sec = getUrlParam('section');
+      if (sec && ['python','dsa','backend'].includes(sec)) switchSection(sec);
+    }
+
+    function updateHero() {
+      const profile = AppState.profile || {};
+      const name = (profile.username || 'Student').split('_')[0];
+      const hour = new Date().getHours();
+      const emoji = hour < 12 ? '🌅' : hour < 18 ? '☀️' : '🌙';
+      const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+      document.getElementById('hero-emoji').textContent = emoji;
+      document.getElementById('hero-title').textContent = `${greet}, ${name}!`;
+
+      const streak = profile.current_streak || 0;
+      const sub = streak > 0
+        ? `🔥 ${streak} day streak! Keep it going!`
+        : `Start your learning journey today. Consistency is key!`;
+      document.getElementById('hero-sub').textContent = sub;
+
+      // Set resume button destination
+      const currentTopic = profile.current_topic_id || 'py_basics';
+      document.getElementById('resume-btn').onclick = () => goToLearn(currentTopic);
+    }
+
+    function updateStats() {
+      const p = AppState.profile || {};
+      const progress = AppState.topicProgress || {};
+
+      document.getElementById('stat-streak').textContent = p.current_streak || 0;
+      document.getElementById('stat-streak-sub').textContent =
+        p.longest_streak > 0 ? `Best: ${p.longest_streak} days` : 'Start today!';
+
+      document.getElementById('stat-solved').textContent = (p.total_questions_solved || 0).toLocaleString();
+      const pct300 = Math.min(100, Math.round(((p.total_questions_solved||0)/300)*100));
+      document.getElementById('stat-solved-sub').textContent =
+        p.total_questions_solved >= 300 ? '🎉 DSA Unlocked!' : `${pct300}% to DSA unlock`;
+
+      const donePy = Object.values(progress).filter(v => v.topic_type==='python' && v.is_completed).length;
+      document.getElementById('stat-topics').textContent = donePy;
+
+      const xp = p.xp_points || 0;
+      document.getElementById('stat-xp').textContent = xp.toLocaleString();
+      document.getElementById('stat-level').textContent = `Level ${getLevelFromXP(xp)}`;
+    }
+
+    function renderTopics(type) {
+      const topics = type === 'python' ? PYTHON_TOPICS : DSA_TOPICS;
+      const progress = AppState.topicProgress || {};
+      const grid = document.getElementById(type+'-topics-grid') || document.getElementById('dsa-grid');
+      if (!grid) return;
+
+      const donePy = Object.values(progress).filter(v => v.topic_type==='python' && v.is_completed).length;
+      if (type==='python') {
+        document.getElementById('python-progress-text').textContent = `${donePy}/20 complete`;
+      }
+
+      grid.innerHTML = topics.map(t => renderTopicCard(t, progress)).join('');
+    }
+
+    function switchSection(sec) {
+      currentSection = sec;
+      ['python','dsa','backend'].forEach(s => {
+        document.getElementById('section-'+s).classList.toggle('hidden', s!==sec);
+        document.getElementById('tab-'+s)?.classList.toggle('active', s===sec);
+      });
+
+      if (sec === 'dsa') renderDSASection();
+    }
+
+    function renderDSASection() {
+      const profile = AppState.profile || {};
+      const solved = profile.total_questions_solved || 0;
+      const pythonDone = profile.python_completed || false;
+      const dsaUnlocked = pythonDone && solved >= APP_CONFIG.DSA_UNLOCK_MIN_QUESTIONS;
+
+      const el = document.getElementById('dsa-content');
+
+      if (dsaUnlocked) {
+        el.innerHTML = `
+          <div class="section-header">
+            <div>
+              <div class="section-title">DSA Curriculum</div>
+              <div class="section-sub">Data Structures & Algorithms. Unlocked! 🎉</div>
+            </div>
+          </div>
+          <div class="topic-grid" id="dsa-grid"></div>`;
+        renderTopics('dsa');
+      } else {
+        const pyPct = pythonDone ? 100 : 0;
+        const qPct  = Math.min(100, Math.round((solved/300)*100));
+
+        el.innerHTML = `
+          <div class="dsa-lock-card">
+            <div class="dsa-lock-icon">🧮</div>
+            <div class="dsa-lock-title gradient-text">DSA is Locked</div>
+            <div class="dsa-lock-desc">
+              Complete all Python topics and solve 300+ questions to unlock Data Structures & Algorithms.
+              DSA questions start from beginner to LeetCode level!
+            </div>
+            <div class="req-bars">
+              <div>
+                <div class="req-bar-label">
+                  <span>Python Complete</span>
+                  <strong>${pythonDone?'✅ Done':'⏳ In Progress'}</strong>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${pyPct}%"></div></div>
+              </div>
+              <div>
+                <div class="req-bar-label">
+                  <span>Questions Solved</span>
+                  <strong>${solved}/300</strong>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${qPct}%"></div></div>
+              </div>
+            </div>
+          </div>`;
+      }
+    }
+
+    function resumeLearning() {
+      const profile = AppState.profile || {};
+      goToLearn(profile.current_topic_id || 'py_basics');
+    }
+
+    init();
+  </script>
+</body>
+</html>

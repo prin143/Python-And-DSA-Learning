@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Code Editor — PyLearn Pro</title>
+  <meta name="description" content="Interactive Python code editor powered by Monaco Editor with Pyodide Python runtime."/>
+  <link rel="stylesheet" href="styles/main.css"/>
+  <style>
+    body { overflow: hidden; }
+    .editor-topbar {
+      height: var(--topbar-h);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,5,26,0.95);
+    }
+    .editor-topbar-left  { display: flex; align-items: center; gap: 12px; }
+    .editor-topbar-right { display: flex; align-items: center; gap: 10px; }
+    .editor-body {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      height: calc(100vh - var(--topbar-h));
+      overflow: hidden;
+    }
+    .editor-problems {
+      border-right: 1px solid var(--border);
+      background: rgba(5,5,26,0.8);
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+    .problems-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+    .problem-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: var(--transition);
+    }
+    .problem-item:hover { background: var(--bg-card); }
+    .problem-item.active { background: rgba(124,58,237,0.1); border-left: 2px solid var(--purple-500); }
+    .problem-title  { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .problem-badges { display: flex; gap: 6px; }
+
+    .editor-right {
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .editor-toolbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,5,26,0.9);
+      flex-shrink: 0;
+    }
+    .file-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px 6px 0 0;
+      font-size: 12px; color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .file-tab.active { background: rgba(124,58,237,0.1); border-color: var(--purple-500); color: var(--purple-300); }
+    #monaco-editor { flex: 1; min-height: 0; }
+    .output-panel {
+      height: 200px; flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: #0a0a18;
+      overflow-y: auto;
+      resize: vertical;
+    }
+    .output-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+    .output-content { padding: 8px 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.7; }
+    .out-line { }
+    .out-line.error { color: var(--red-400); }
+    .out-line.success { color: var(--green-400); }
+    .out-line.info  { color: var(--cyan-400); }
+    .out-line.system { color: var(--text-muted); font-style: italic; }
+
+    .problem-detail {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: none;
+    }
+    .problem-detail.show { display: block; }
+    .problem-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .problem-examples { margin-top: 12px; }
+    .example-item {
+      margin-bottom: 8px; font-size: 12px;
+      background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px 12px;
+      font-family: var(--font-mono);
+    }
+
+    .pyodide-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--text-muted);
+    }
+    .pyodide-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--yellow-400);
+      animation: pulse 1s infinite;
+    }
+    .pyodide-dot.ready { background: var(--green-400); animation: none; }
+    .pyodide-dot.error { background: var(--red-400); animation: none; }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay"><div class="spinner"></div></div>
+  <div id="toast-container"></div>
+  <div id="sidebar" class="sidebar" style="display:none"></div>
+
+  <div class="main-content" style="margin-left:0">
+    <!-- Top bar -->
+    <div class="editor-topbar">
+      <div class="editor-topbar-left">
+        <a href="dashboard.html" style="text-decoration:none;color:var(--text-muted);font-size:20px;line-height:1">←</a>
+        <div style="font-size:16px;font-weight:700">💻 Python Code Editor</div>
+        <div class="pyodide-status" id="pyodide-status">
+          <div class="pyodide-dot" id="py-dot"></div>
+          <span id="py-status-text">Loading Python...</span>
+        </div>
+      </div>
+      <div class="editor-topbar-right">
+        <select id="lang-select" class="form-input" style="width:auto;padding:6px 12px;font-size:13px">
+          <option value="python">🐍 Python</option>
+        </select>
+        <button class="btn btn-primary btn-sm" id="run-btn" onclick="runCode()" disabled>
+          ▶ Run
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="clearOutput()">🗑 Clear</button>
+      </div>
+    </div>
+
+    <div class="editor-body">
+      <!-- Problem List -->
+      <div class="editor-problems">
+        <div class="problems-header">Practice Problems</div>
+        <div id="problems-list">Loading...</div>
+      </div>
+
+      <!-- Editor + Output -->
+      <div class="editor-right">
+        <div class="editor-toolbar">
+          <div class="file-tab active">📄 solution.py</div>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="resetCode()">Reset</button>
+            <button class="btn btn-secondary btn-sm" onclick="copyCode()">📋 Copy</button>
+          </div>
+        </div>
+        <div id="monaco-editor"></div>
+        <div class="output-panel">
+          <div class="output-header">
+            <span>🖥️ Console Output</span>
+            <button onclick="clearOutput()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px">Clear</button>
+          </div>
+          <div class="output-content" id="output-content">
+            <div class="out-line system">» Ready. Click ▶ Run to execute your code.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monaco Editor CDN -->
+  <script>
+    var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } };
+  </script>
+  <!-- Skulpt: Python in browser (works on localhost, no CORS issues) -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/curriculum.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let monacoEditor = null;
+    let pyodide = null;
+    let currentProblem = null;
+
+    // ========== PRACTICE PROBLEMS ==========
+    const PRACTICE_PROBLEMS = [
+      {
+        id: 'p001', title: 'Hello World', difficulty: 'easy',
+        desc: 'Print "Hello, World!" to the console.',
+        examples: [{input:'(none)',output:'Hello, World!'}],
+        starter: '# Write your solution here\nprint("Hello, World!")',
+        solution: 'print("Hello, World!")'
+      },
+      {
+        id: 'p002', title: 'FizzBuzz', difficulty: 'easy',
+        desc: 'Print numbers 1-30. For multiples of 3 print "Fizz", multiples of 5 print "Buzz", multiples of both print "FizzBuzz".',
+        examples: [{input:'(none)',output:'1\n2\nFizz\n4\nBuzz\n...'}],
+        starter: 'for i in range(1, 31):\n    # your code here\n    pass',
+      },
+      {
+        id: 'p003', title: 'Reverse a String', difficulty: 'easy',
+        desc: 'Write a function reverse_string(s) that returns the reversed version of the string s.',
+        examples: [{input:'reverse_string("hello")',output:'"olleh"'},{input:'reverse_string("Python")',output:'"nohtyP"'}],
+        starter: 'def reverse_string(s):\n    # Your code here\n    pass\n\n# Test\nprint(reverse_string("hello"))\nprint(reverse_string("Python"))',
+      },
+      {
+        id: 'p004', title: 'Check Palindrome', difficulty: 'easy',
+        desc: 'Write is_palindrome(s) that returns True if s reads the same forwards and backwards (case-insensitive).',
+        examples: [{input:'is_palindrome("racecar")',output:'True'},{input:'is_palindrome("hello")',output:'False'}],
+        starter: 'def is_palindrome(s):\n    # Your code here\n    pass\n\nprint(is_palindrome("racecar"))\nprint(is_palindrome("hello"))\nprint(is_palindrome("Madam"))',
+      },
+      {
+        id: 'p005', title: 'Fibonacci', difficulty: 'easy',
+        desc: 'Write fibonacci(n) that returns the first n Fibonacci numbers as a list.',
+        examples: [{input:'fibonacci(8)',output:'[0, 1, 1, 2, 3, 5, 8, 13]'}],
+        starter: 'def fibonacci(n):\n    # Your code here\n    pass\n\nprint(fibonacci(8))',
+      },
+      {
+        id: 'p006', title: 'Two Sum', difficulty: 'medium',
+        desc: 'Given a list of integers and a target, return indices of two numbers that add up to target. O(n) solution required.',
+        examples: [{input:'two_sum([2,7,11,15], 9)',output:'[0, 1]'},{input:'two_sum([3,2,4], 6)',output:'[1, 2]'}],
+        starter: 'def two_sum(nums, target):\n    # Hint: use a hash map for O(n)\n    pass\n\nprint(two_sum([2,7,11,15], 9))\nprint(two_sum([3,2,4], 6))',
+      },
+      {
+        id: 'p007', title: 'Valid Parentheses', difficulty: 'medium',
+        desc: 'Write is_valid(s) that returns True if the string of brackets is valid (properly opened and closed).',
+        examples: [{input:'is_valid("([])")',output:'True'},{input:'is_valid("([)]")',output:'False'}],
+        starter: 'def is_valid(s):\n    # Hint: use a stack\n    pass\n\nprint(is_valid("([])"))\nprint(is_valid("([)]"))\nprint(is_valid("{[]}"))',
+      },
+      {
+        id: 'p008', title: 'Binary Search', difficulty: 'medium',
+        desc: 'Implement binary_search(arr, target) in O(log n) returning index or -1.',
+        examples: [{input:'binary_search([1,3,5,7,9,11], 7)',output:'3'},{input:'binary_search([1,3,5,7,9], 4)',output:'-1'}],
+        starter: 'def binary_search(arr, target):\n    lo, hi = 0, len(arr) - 1\n    # Your code here\n    pass\n\nprint(binary_search([1,3,5,7,9,11], 7))\nprint(binary_search([1,3,5,7,9], 4))',
+      },
+      {
+        id: 'p009', title: 'Merge Sort', difficulty: 'hard',
+        desc: 'Implement merge_sort(arr) that returns the sorted array using divide-and-conquer. O(n log n).',
+        examples: [{input:'merge_sort([64,34,25,12,22,11,90])',output:'[11, 12, 22, 25, 34, 64, 90]'}],
+        starter: 'def merge_sort(arr):\n    if len(arr) <= 1:\n        return arr\n    mid = len(arr) // 2\n    # Divide and conquer here\n    pass\n\nprint(merge_sort([64,34,25,12,22,11,90]))',
+      },
+      {
+        id: 'p010', title: 'LRU Cache', difficulty: 'hard',
+        desc: 'Implement an LRU Cache with get(key) and put(key, value) both O(1). Use collections.OrderedDict.',
+        examples: [{input:'cache = LRUCache(2)\ncache.put(1,1); cache.put(2,2)\nprint(cache.get(1))',output:'1'}],
+        starter: 'from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n    \n    def get(self, key):\n        # Your code here\n        pass\n    \n    def put(self, key, value):\n        # Your code here\n        pass\n\ncache = LRUCache(2)\ncache.put(1,1)\ncache.put(2,2)\nprint(cache.get(1))\ncache.put(3,3)\nprint(cache.get(2))',
+      },
+    ];
+
+    // ========== INIT ==========
+    async function init() {
+      // Don't require auth for editor (can use without login)
+      // But try to load if logged in
+      try {
+        await initApp(false);
+      } catch(e) { /* no-op */ }
+
+      // Load Monaco
+      require(['vs/editor/editor.main'], function() {
+        monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+          value: PRACTICE_PROBLEMS[0].starter,
+          language: 'python',
+          theme: 'vs-dark',
+          fontSize: 15,
+          lineHeight: 24,
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
+          tabSize: 4,
+          insertSpaces: true,
+          wordWrap: 'off',
+          padding: { top: 16, bottom: 16 },
+          suggest: { showKeywords: true },
+        });
+
+        // Ctrl+Enter to run
+        monacoEditor.addCommand(
+          monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+          () => runCode()
+        );
+
+        loadProblem(0);
+        renderProblems();
+        hideLoading();
+      });
+
+      // Load Pyodide
+      loadPyodide();
+    }
+
+    // ========== SKULPT PYTHON RUNTIME (works on localhost!) ==========
+    function loadPyodide() {
+      // Skulpt loads synchronously from CDN script tags above
+      // Just verify it's available
+      if (typeof Sk !== 'undefined') {
+        document.getElementById('py-dot').className = 'pyodide-dot ready';
+        document.getElementById('py-status-text').textContent = 'Python Ready ✓';
+        document.getElementById('run-btn').disabled = false;
+        addOutput('success', '✓ Python runtime ready! Click ▶ Run or press Ctrl+Enter');
+        pyodide = true; // flag as ready
+      } else {
+        // Skulpt not loaded yet — wait and retry
+        setTimeout(() => {
+          if (typeof Sk !== 'undefined') {
+            document.getElementById('py-dot').className = 'pyodide-dot ready';
+            document.getElementById('py-status-text').textContent = 'Python Ready ✓';
+            document.getElementById('run-btn').disabled = false;
+            addOutput('success', '✓ Python runtime ready!');
+            pyodide = true;
+          } else {
+            document.getElementById('py-dot').className = 'pyodide-dot error';
+            document.getElementById('py-status-text').textContent = 'No Internet?';
+            addOutput('error', '⚠ Python runtime failed. Check internet connection and refresh.');
+            document.getElementById('run-btn').disabled = false;
+          }
+        }, 2000);
+      }
+    }
+
+    // ========== RUN CODE (Skulpt) ==========
+    async function runCode() {
+      const code = monacoEditor.getValue();
+      if (!code.trim()) return;
+
+      const btn = document.getElementById('run-btn');
+      btn.textContent = '⏳ Running...';
+      btn.disabled = true;
+      clearOutput();
+      addOutput('system', '» Running solution.py...\n');
+
+      if (typeof Sk === 'undefined') {
+        addOutput('error', '⚠ Python not loaded. Refresh the page (internet connection needed).');
+        btn.textContent = '▶ Run'; btn.disabled = false;
+        return;
+      }
+
+      // Configure Skulpt
+      Sk.configure({
+        output: (text) => addOutput('', text),
+        read: (filename) => {
+          if (Sk.builtinFiles === undefined || Sk.builtinFiles['files'][filename] === undefined) {
+            throw new Error("File not found: '" + filename + "'");
+          }
+          return Sk.builtinFiles['files'][filename];
+        },
+        execLimit: 10000,  // 10 second timeout
+      });
+
+      const startTime = performance.now();
+      try {
+        await Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody('<stdin>', false, code, true)
+        );
+        const elapsed = (performance.now() - startTime).toFixed(1);
+        addOutput('system', `\n» Finished in ${elapsed}ms`);
+      } catch(e) {
+        // Skulpt error — show clean message
+        const msg = e.toString();
+        addOutput('error', '❌ ' + (msg.includes('tp$name') ? msg.split('\n')[0] : msg));
+      }
+
+      btn.textContent = '▶ Run'; btn.disabled = false;
+    }
+
+    // ========== OUTPUT ==========
+    function addOutput(type, text) {
+      const el = document.getElementById('output-content');
+      const lines = String(text).split('\n');
+      lines.forEach(line => {
+        if (line === '' && lines.length > 1) return;
+        const d = document.createElement('div');
+        d.className = 'out-line ' + type;
+        d.textContent = line;
+        el.appendChild(d);
+      });
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function clearOutput() {
+      document.getElementById('output-content').innerHTML =
+        '<div class="out-line system">» Output cleared.</div>';
+    }
+
+    // ========== PROBLEMS ==========
+    function renderProblems() {
+      const list = document.getElementById('problems-list');
+      list.innerHTML = PRACTICE_PROBLEMS.map((p,i) => `
+        <div class="problem-item ${i===0?'active':''}" id="prob-item-${i}" onclick="loadProblem(${i})">
+          <div class="problem-title">${i+1}. ${p.title}</div>
+          <div class="problem-badges"><span class="badge badge-${p.difficulty}">${p.difficulty}</span></div>
+        </div>`).join('');
+    }
+
+    function loadProblem(idx) {
+      const p = PRACTICE_PROBLEMS[idx];
+      currentProblem = p;
+
+      document.querySelectorAll('.problem-item').forEach((el,i) => {
+        el.classList.toggle('active', i===idx);
+      });
+
+      if (monacoEditor) monacoEditor.setValue(p.starter || `# ${p.title}\n# Your solution here\n`);
+      clearOutput();
+      addOutput('system', `» Loaded: "${p.title}" (${p.difficulty})`);
+      addOutput('system', `» Problem: ${p.desc}`);
+      addOutput('system', `» Press Ctrl+Enter or click ▶ Run`);
+    }
+
+    function resetCode() {
+      if (currentProblem && monacoEditor) {
+        monacoEditor.setValue(currentProblem.starter);
+      }
+    }
+
+    function copyCode() {
+      if (!monacoEditor) return;
+      navigator.clipboard.writeText(monacoEditor.getValue());
+      showToast('success','Copied!','Code copied to clipboard');
+    }
+
+    init();
+  </script>
+</body>
+</html>
