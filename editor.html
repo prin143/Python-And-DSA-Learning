@@ -185,20 +185,23 @@
     </div>
   </div>
 
-  <!-- Monaco Editor CDN -->
-  <script>
-    var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } };
-  </script>
-  <!-- Skulpt: Python in browser (works on localhost, no CORS issues) -->
-  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <!-- Supabase & App Scripts (Loaded first so AMD loader does not hijack globals) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/curriculum.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- Skulpt: Python in browser (works on localhost, no CORS issues) -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
+  <!-- Monaco Editor CDN -->
+  <script>
+    var require = { paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } };
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
   <script>
     let monacoEditor = null;
     let pyodide = null;
@@ -269,45 +272,76 @@
       },
     ];
 
+    // Dismiss loader safely
+    function dismissLoader() {
+      if (typeof hideLoading === 'function') hideLoading();
+      const el = document.getElementById('loading-overlay');
+      if (el) el.classList.add('hidden');
+    }
+
     // ========== INIT ==========
     async function init() {
+      // Safety timer: Never stay stuck in loading overlay
+      const safetyTimer = setTimeout(dismissLoader, 1500);
+
+      renderProblems();
+
       // Don't require auth for editor (can use without login)
-      // But try to load if logged in
       try {
-        await initApp(false);
-      } catch(e) { /* no-op */ }
+        if (typeof initApp === 'function') {
+          await initApp(false);
+        }
+      } catch(e) {
+        console.warn('initApp error:', e);
+      }
 
       // Load Monaco
-      require(['vs/editor/editor.main'], function() {
-        monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
-          value: PRACTICE_PROBLEMS[0].starter,
-          language: 'python',
-          theme: 'vs-dark',
-          fontSize: 15,
-          lineHeight: 24,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          automaticLayout: true,
-          tabSize: 4,
-          insertSpaces: true,
-          wordWrap: 'off',
-          padding: { top: 16, bottom: 16 },
-          suggest: { showKeywords: true },
+      const initMonaco = () => {
+        try {
+          monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+            value: PRACTICE_PROBLEMS[0].starter,
+            language: 'python',
+            theme: 'vs-dark',
+            fontSize: 15,
+            lineHeight: 24,
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+            tabSize: 4,
+            insertSpaces: true,
+            wordWrap: 'off',
+            padding: { top: 16, bottom: 16 },
+            suggest: { showKeywords: true },
+          });
+
+          // Ctrl+Enter to run
+          monacoEditor.addCommand(
+            monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+            () => runCode()
+          );
+
+          loadProblem(0);
+        } catch(err) {
+          console.error('Monaco init error:', err);
+        } finally {
+          clearTimeout(safetyTimer);
+          dismissLoader();
+        }
+      };
+
+      if (typeof require === 'function') {
+        require(['vs/editor/editor.main'], initMonaco, function(err) {
+          console.warn('Monaco CDN failed, falling back:', err);
+          clearTimeout(safetyTimer);
+          dismissLoader();
         });
+      } else {
+        clearTimeout(safetyTimer);
+        dismissLoader();
+      }
 
-        // Ctrl+Enter to run
-        monacoEditor.addCommand(
-          monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-          () => runCode()
-        );
-
-        loadProblem(0);
-        renderProblems();
-        hideLoading();
-      });
-
-      // Load Pyodide
+      // Load Skulpt
       loadPyodide();
     }
 

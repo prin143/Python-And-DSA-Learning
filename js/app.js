@@ -293,16 +293,34 @@ window.renderTopbar = function(title, breadcrumb = null) {
 };
 
 // ============================================================
-// LOADING OVERLAY
+// LOADING OVERLAY (with auto-dismiss safety watchdog)
 // ============================================================
+let _loadingWatchdog = null;
+
 window.showLoading = function() {
   const el = document.getElementById('loading-overlay');
   if (el) el.classList.remove('hidden');
+  clearTimeout(_loadingWatchdog);
+  _loadingWatchdog = setTimeout(() => {
+    window.hideLoading();
+  }, 4000);
 };
+
 window.hideLoading = function() {
+  clearTimeout(_loadingWatchdog);
   const el = document.getElementById('loading-overlay');
   if (el) el.classList.add('hidden');
 };
+
+// Global safety: automatically hide overlay after 3.5s if anything gets stuck
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    const el = document.getElementById('loading-overlay');
+    if (el && !el.classList.contains('hidden')) {
+      window.hideLoading();
+    }
+  }, 3500);
+}
 
 // ============================================================
 // TOPIC CARD RENDERER

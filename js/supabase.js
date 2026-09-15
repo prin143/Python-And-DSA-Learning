@@ -2,18 +2,21 @@
 // PyLearn Pro — Supabase Client & Database Operations
 // ============================================================
 
-const { createClient } = supabase;
+const { createClient } = (typeof supabase !== 'undefined' ? supabase : (window.supabase || {}));
 
 // Auto-detect site URL (works on localhost AND Vercel/any host)
 const SITE_URL = window.location.origin;
 
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  }
-});
+let supabaseClient = null;
+if (typeof createClient === 'function' && typeof SUPABASE_URL !== 'undefined') {
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    }
+  });
+}
 
 
 // ============================================================
