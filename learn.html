@@ -2,9 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Learn — PyLearn Pro</title>
   <meta name="description" content="Deep-dive topic learning with notes, examples, and cheat sheets."/>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#7c3aed"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="PyLearn Pro"/>
+  <link rel="apple-touch-icon" href="/icon-512.jpg"/>
+  <link rel="icon" type="image/jpeg" href="/icon-512.jpg"/>
+
   <link rel="stylesheet" href="styles/main.css"/>
   <!-- Prism for syntax highlighting -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
@@ -202,6 +213,7 @@
       }
 
       renderSidebar('learn');
+      renderMobileNav('learn');
       renderTopbar('Learning', `<span>📚 ${currentTopic.type.toUpperCase()}</span><span class="topbar-sep">›</span><span>${currentTopic.title}</span>`);
       renderTopicHeader();
       renderContent();

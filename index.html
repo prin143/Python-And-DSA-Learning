@@ -2,9 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>PyLearn Pro — Master Python, DSA & Beyond</title>
-  <meta name="description" content="Learn Python, DSA and Backend with LeetCode-style tests, streak tracking, and a premium dark UI. Unlock topics by solving coding challenges." />
+  <meta name="description" content="Learn Python, DSA and Backend with LeetCode-style tests, streak tracking, and a premium UI. Unlock topics by solving coding challenges." />
+
+  <!-- PWA: Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- PWA: Theme & Icons -->
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="PyLearn Pro" />
+  <link rel="apple-touch-icon" href="/icon-512.jpg" />
+  <link rel="icon" type="image/jpeg" href="/icon-512.jpg" />
+
+  <!-- PWA: Windows tile -->
+  <meta name="msapplication-TileColor" content="#7c3aed" />
+  <meta name="msapplication-TileImage" content="/icon-512.jpg" />
+
   <link rel="stylesheet" href="styles/main.css" />
   <style>
     body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
@@ -377,6 +394,17 @@
       const { data } = await supabaseClient.auth.getSession();
       if (data?.session) window.location.href = 'dashboard.html';
     })();
+  </script>
+
+  <!-- PWA: Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('[SW] Registered:', reg.scope))
+          .catch(err => console.warn('[SW] Failed:', err));
+      });
+    }
   </script>
 </body>
 </html>

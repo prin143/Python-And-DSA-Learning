@@ -1,0 +1,64 @@
+{
+  "id": "/",
+  "name": "PyLearn Pro",
+  "short_name": "PyLearn",
+  "description": "Master Python, DSA & Backend with LeetCode-style tests and streak tracking",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#f8f9fc",
+  "theme_color": "#7c3aed",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Home",
+      "url": "/dashboard.html",
+      "description": "Go to your learning dashboard",
+      "icons": [{ "src": "/icon-512.jpg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Code Editor",
+      "short_name": "Editor",
+      "url": "/editor.html",
+      "description": "Open Python code editor",
+      "icons": [{ "src": "/icon-512.jpg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Take a Test",
+      "short_name": "Test",
+      "url": "/test.html",
+      "description": "Test your Python knowledge",
+      "icons": [{ "src": "/icon-512.jpg", "sizes": "192x192" }]
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

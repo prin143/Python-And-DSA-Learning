@@ -404,3 +404,80 @@ window.updateTopbarStats = function() {
   if (!profile) return;
   renderTopbar(document.getElementById('topbar')?.dataset?.title || '');
 };
+
+// ============================================================
+// MOBILE BOTTOM NAVIGATION
+// ============================================================
+window.renderMobileNav = function(activePage = 'dashboard') {
+  // Avoid duplicate injection
+  if (document.getElementById('mobile-nav')) return;
+
+  const pages = [
+    { id: 'dashboard', icon: '🏠', label: 'Home',   href: 'dashboard.html' },
+    { id: 'learn',     icon: '📖', label: 'Learn',  href: 'learn.html'     },
+    { id: 'test',      icon: '✅', label: 'Test',   href: 'test.html'      },
+    { id: 'editor',    icon: '💻', label: 'Editor', href: 'editor.html'    },
+  ];
+
+  const nav = document.createElement('nav');
+  nav.id = 'mobile-nav';
+  nav.setAttribute('aria-label', 'Mobile navigation');
+
+  nav.innerHTML = pages.map(p => `
+    <a href="${p.href}"
+       class="mobile-nav-item${p.id === activePage ? ' active' : ''}"
+       aria-label="${p.label}"
+       aria-current="${p.id === activePage ? 'page' : 'false'}">
+      <span class="nav-icon">${p.icon}</span>
+      <span>${p.label}</span>
+    </a>
+  `).join('');
+
+  document.body.appendChild(nav);
+};
+
+// ============================================================
+// SERVICE WORKER UPDATE BANNER
+// ============================================================
+(function initSWUpdateListener() {
+  if (!('serviceWorker' in navigator)) return;
+
+  // Listen for messages from the service worker
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type !== 'SW_UPDATED') return;
+
+    // Show or create the update banner
+    let banner = document.getElementById('sw-update-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'sw-update-banner';
+      banner.textContent = '🎉 New version available — tap to update!';
+      banner.setAttribute('role', 'alert');
+      banner.onclick = () => window.location.reload();
+      document.body.prepend(banner);
+    }
+    banner.classList.add('show');
+  });
+
+  // Also register/update the SW on each page load
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('[SW] Registered:', reg.scope);
+        // Check for waiting worker (update ready)
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker?.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[SW] Failed:', err));
+  });
+})();
+

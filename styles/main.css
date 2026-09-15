@@ -1404,3 +1404,288 @@ pre code { background: none; border: none; padding: 0; color: inherit; font-size
   font-size: 11px; font-weight: 800;
   color: var(--orange-400);
 }
+
+
+/* ============================================================
+   MOBILE & PWA RESPONSIVE LAYER
+   ============================================================ */
+
+/* ── CSS variables for safe areas (notch / gesture bar) ───── */
+:root {
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+  --mobile-nav-h: 62px; /* bottom nav bar height */
+}
+
+/* ── Touch UX: remove tap delay & highlight ───────────────── */
+button, a, [role="button"], .mcq-option, .topic-card,
+.sidebar-item, .btn, .q-dot {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Smooth momentum scrolling on iOS ─────────────────────── */
+.main-content, .sidebar, .content-wrapper, .modal-box {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── SW Update Banner ──────────────────────────────────────── */
+#sw-update-banner {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 10000;
+  background: var(--gradient-primary);
+  color: white;
+  font-size: 13px; font-weight: 600;
+  padding: 10px 16px;
+  padding-top: calc(10px + var(--safe-top));
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(124,58,237,0.4);
+  animation: slideDown 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+#sw-update-banner.show { display: block; }
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+/* ── Mobile Bottom Navigation Bar ─────────────────────────── */
+#mobile-nav {
+  display: none; /* shown via media query */
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--mobile-nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: #ffffff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  z-index: 200;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 44px;
+  padding: 6px 4px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: var(--transition);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.mobile-nav-item .nav-icon {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.mobile-nav-item.active {
+  color: var(--purple-500);
+}
+.mobile-nav-item.active .nav-icon {
+  transform: scale(1.15);
+}
+.mobile-nav-item:active { transform: scale(0.92); }
+
+
+/* ============================================================
+   TABLET  (≤ 1024px) — Collapsed icon-only sidebar
+   ============================================================ */
+@media (max-width: 1024px) {
+  :root { --nav-width: 68px; }
+
+  .sidebar-logo-text,
+  .sidebar-logo div:last-child,
+  .sidebar-item-text,
+  .sidebar-item-badge,
+  .sidebar-section-label,
+  .sidebar-profile-info,
+  .sidebar-stats,
+  .sidebar-streak-badge,
+  .sidebar-username,
+  .sidebar-level,
+  .sidebar-bottom .btn span { display: none; }
+
+  .sidebar-logo { justify-content: center; padding: 16px; }
+  .sidebar-logo-icon { margin: 0; }
+
+  .sidebar-item {
+    justify-content: center;
+    padding: 10px;
+    margin: 2px 6px;
+  }
+  .sidebar-item-icon { width: auto; font-size: 20px; }
+
+  .sidebar-profile { justify-content: center; padding: 12px; }
+  .sidebar-avatar, .sidebar-avatar-img {
+    width: 38px; height: 38px; font-size: 15px;
+  }
+  .avatar-upload-overlay { display: none; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .topbar { padding: 0 20px; }
+  .content-wrapper { padding: 20px 16px; }
+}
+
+
+/* ============================================================
+   MOBILE  (≤ 768px) — Bottom nav, no sidebar
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Hide desktop sidebar completely */
+  .sidebar { display: none !important; }
+
+  /* Show mobile bottom nav */
+  #mobile-nav { display: flex !important; }
+
+  /* Remove sidebar margin from main content */
+  .main-content {
+    margin-left: 0 !important;
+    padding-bottom: calc(var(--mobile-nav-h) + var(--safe-bottom));
+  }
+
+  /* Topbar safe areas */
+  .topbar {
+    padding: 0 16px;
+    padding-top: var(--safe-top);
+    height: calc(var(--topbar-h) + var(--safe-top));
+  }
+
+  /* Content padding */
+  .content-wrapper { padding: 16px 12px; }
+
+  /* Single column topic grid */
+  .topic-grid { grid-template-columns: 1fr; }
+
+  /* 2-column stats on mobile */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card  { padding: 16px; }
+  .stat-value { font-size: 28px; }
+
+  /* Ensure all buttons meet 44px min tap target */
+  .btn        { min-height: 44px; }
+  .btn-sm     { min-height: 36px; }
+  .btn-icon   { width: 44px; height: 44px; }
+  .mcq-option { min-height: 52px; }
+  .q-dot      { width: 32px; height: 32px; font-size: 12px; }
+
+  /* Full-width auth card */
+  .auth-container { max-width: 100%; }
+  .auth-card { padding: 24px 20px; border-radius: var(--radius-lg); }
+  .stats-teaser { grid-template-columns: repeat(3,1fr); gap: 8px; }
+
+  /* Toasts at top on mobile (away from keyboard) */
+  #toast-container {
+    top: calc(12px + var(--safe-top));
+    bottom: auto;
+    left: 12px; right: 12px;
+    align-items: stretch;
+  }
+  .toast {
+    min-width: unset;
+    max-width: 100%;
+    width: 100%;
+    animation: toastInMobile 0.35s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes toastInMobile {
+    from { transform: translateY(-110%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+  .toast.removing {
+    animation: toastOutMobile 0.3s ease forwards;
+  }
+  @keyframes toastOutMobile {
+    from { transform: translateY(0);     opacity: 1; }
+    to   { transform: translateY(-110%); opacity: 0; }
+  }
+
+  /* Modals become bottom sheets */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-box {
+    max-width: 100%; width: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: 28px 20px;
+    padding-bottom: calc(28px + var(--safe-bottom));
+    animation: sheetUp 0.35s cubic-bezier(0.16,1,0.3,1);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* Test layout: stack panels vertically */
+  .test-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr;
+  }
+  .test-left {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+    padding: 16px !important;
+  }
+  .test-main { padding: 16px !important; }
+
+  /* Learn layout: single column */
+  .learn-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .learn-sidebar-panel { position: static; }
+
+  /* Editor layout: stack */
+  .editor-body {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 220px 1fr;
+  }
+  .editor-problems {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Topbar: hide breadcrumb on very small screens */
+  .topbar-breadcrumb { display: none; }
+  .topbar-title      { font-size: 15px; }
+
+  /* Streak calendar smaller dots */
+  .streak-day        { width: 14px; height: 14px; border-radius: 2px; }
+
+  /* Fix orbs size for performance */
+  .orb-1 { width: 300px; height: 300px; }
+  .orb-2 { width: 200px; height: 200px; }
+  .orb-3 { display: none; }
+
+  /* Increase form input size for mobile */
+  .form-input { font-size: 16px; } /* prevents iOS auto-zoom */
+  .form-group { margin-bottom: 16px; }
+
+  /* Dash hero mobile */
+  .dash-hero { padding: 20px; }
+  .dash-hero-emoji { font-size: 36px; }
+  .dash-hero-title { font-size: 18px; }
+
+  /* Content wrapper left/right safe areas */
+  .content-wrapper {
+    padding-left:  calc(12px + var(--safe-left));
+    padding-right: calc(12px + var(--safe-right));
+  }
+}
+
+/* ── Very small phones (≤ 375px) ──────────────────────────── */
+@media (max-width: 375px) {
+  .stats-grid  { grid-template-columns: 1fr; }
+  .stat-value  { font-size: 24px; }
+  .mobile-nav-item { font-size: 9px; }
+  .mobile-nav-item .nav-icon { font-size: 20px; }
+  .auth-card   { padding: 20px 16px; }
+}
+

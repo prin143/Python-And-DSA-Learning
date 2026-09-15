@@ -2,9 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Test — PyLearn Pro</title>
   <meta name="description" content="Topic test with LeetCode-style questions. Pass 70% to unlock the next topic."/>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#7c3aed"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="PyLearn Pro"/>
+  <link rel="apple-touch-icon" href="/icon-512.jpg"/>
+  <link rel="icon" type="image/jpeg" href="/icon-512.jpg"/>
+
   <link rel="stylesheet" href="styles/main.css"/>
   <style>
     .test-layout   { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - var(--topbar-h)); }
@@ -213,6 +224,7 @@
       }
 
       renderSidebar();
+      renderMobileNav('test');
       renderTopbar(`Test: ${currentTopic.title}`);
 
       // Load questions (shuffled)
